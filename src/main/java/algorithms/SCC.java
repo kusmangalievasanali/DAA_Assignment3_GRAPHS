@@ -32,7 +32,7 @@ public class SCC {
     }
 
     public static KosarajuResult kosaraju(Graph graph) {
-        int n = graph.getV();
+        int n = graph.n();
         boolean[] visited = new boolean[n];
         ArrayDeque<Integer> finishOrder = new ArrayDeque<>();
         long edgeScans = 0;
@@ -52,13 +52,13 @@ public class SCC {
                     }
                     int u = stack.peek();
                     int edgeIndex = stateStack.pop();
-                    List<Edge> neighbors = graph.getAdj(u);
+                    List<Edge> neighbors = graph.adj(u);
 
                     if (edgeIndex < neighbors.size()) {
                         stateStack.push(edgeIndex + 1);
                         Edge e = neighbors.get(edgeIndex);
                         edgeScans++;
-                        int v = e.to;
+                        int v = (e.u == u) ? e.v : e.u;
                         if (!visited[v]) {
                             visited[v] = true;
                             stack.push(v);
@@ -72,14 +72,7 @@ public class SCC {
             }
         }
 
-        Graph reversed = new Graph(n, false);
-        for (int u = 0; u < n; u++) {
-            for (Edge e : graph.getAdj(u)) {
-                reversed.addEdge(e.to, u, e.weight);
-                edgeScans++;
-            }
-        }
-
+        Graph reversed = graph.reverse();
         Arrays.fill(visited, false);
         int sccCount = 0;
 
@@ -95,9 +88,9 @@ public class SCC {
                         maxDepth = stack.size();
                     }
                     int u = stack.pop();
-                    for (Edge e : reversed.getAdj(u)) {
+                    for (Edge e : reversed.adj(u)) {
                         edgeScans++;
-                        int v = e.to;
+                        int v = (e.u == u) ? e.v : e.u;
                         if (!visited[v]) {
                             visited[v] = true;
                             stack.push(v);
@@ -135,13 +128,12 @@ public class SCC {
     }
 
     public static KahnResult kahn(Graph graph) {
-        int n = graph.getV();
-        int[] inDegree = new int[n];
+        int n = graph.n();
+        int[] inDegree = graph.inDegrees();
         long edgeScans = 0;
 
         for (int u = 0; u < n; u++) {
-            for (Edge e : graph.getAdj(u)) {
-                inDegree[e.to]++;
+            for (Edge e : graph.adj(u)) {
                 edgeScans++;
             }
         }
@@ -158,9 +150,9 @@ public class SCC {
             int u = queue.poll();
             order.add(u);
 
-            for (Edge e : graph.getAdj(u)) {
+            for (Edge e : graph.adj(u)) {
                 edgeScans++;
-                int v = e.to;
+                int v = e.v;
                 inDegree[v]--;
                 if (inDegree[v] == 0) {
                     queue.add(v);

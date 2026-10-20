@@ -49,7 +49,7 @@ public class Benchmark {
 
     private static Graph generateUndirected(int n, int targetM) {
         Random rnd = new Random(42);
-        Graph g = new Graph(n, true);
+        Graph g = new Graph(n, false);
         int[] perm = new int[n];
         for (int i = 0; i < n; i++) perm[i] = i;
         for (int i = n - 1; i > 0; i--) {
@@ -82,7 +82,7 @@ public class Benchmark {
 
     private static Graph generateDirected(int n, int targetM) {
         Random rnd = new Random(42);
-        Graph g = new Graph(n, false);
+        Graph g = new Graph(n, true);
         int addedEdges = 0;
         while (addedEdges < targetM) {
             int a = rnd.nextInt(n);
@@ -98,7 +98,7 @@ public class Benchmark {
 
     private static Graph generateDag(int n, int targetM) {
         Random rnd = new Random(42);
-        Graph g = new Graph(n, false);
+        Graph g = new Graph(n, true);
         int[] rank = new int[n];
         for (int i = 0; i < n; i++) rank[i] = i;
         for (int i = n - 1; i > 0; i--) {

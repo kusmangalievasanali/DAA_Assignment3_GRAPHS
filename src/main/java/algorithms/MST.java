@@ -32,56 +32,37 @@ public class MST {
         public long getDsuOps() { return dsuOps; }
     }
 
-
     public static Result kruskal(Graph graph) {
-        int n = graph.getV();
-        List<Edge> allEdges = new ArrayList<>();
-        // Для неориентированного графа соберем все уникальные рёбра
-        boolean[][] visited = new boolean[n][n];
-        for (int u = 0; u < n; u++) {
-            for (Edge e : graph.getAdj(u)) {
-                int v = e.to;
-                if (!visited[u][v] && !visited[v][u]) {
-                    allEdges.add(e);
-                    visited[u][v] = true;
-                    visited[v][u] = true;
-                }
-            }
-        }
-
+        int n = graph.n();
+        List<Edge> allEdges = graph.edges();
         long edgeScans = allEdges.size();
-        long comparisons = 0;
-
-        allEdges.sort((e1, e2) -> {
-            // Лямбда сортировки совершает сравнения
-            return Integer.compare(e1.weight, e2.weight);
-        });
-
 
         class CountingComparator implements java.util.Comparator<Edge> {
             long compCount = 0;
             @Override
             public int compare(Edge a, Edge b) {
                 compCount++;
-                return Integer.compare(a.weight, b.weight);
+                return Integer.compare(a.w, b.w);
             }
         }
         CountingComparator comp = new CountingComparator();
-        allEdges.sort(comp);
-        comparisons = comp.compCount;
+
+        List<Edge> sortedEdges = new ArrayList<>(allEdges);
+        sortedEdges.sort(comp);
+        long comparisons = comp.compCount;
 
         DSU dsu = new DSU(n);
         List<Edge> mstEdges = new ArrayList<>();
         long totalWeight = 0;
 
-        for (Edge e : allEdges) {
+        for (Edge e : sortedEdges) {
             edgeScans++;
-            int rootU = dsu.find(e.from);
-            int rootV = dsu.find(e.to);
+            int rootU = dsu.find(e.u);
+            int rootV = dsu.find(e.v);
             if (rootU != rootV) {
-                dsu.union(e.from, e.to);
+                dsu.union(e.u, e.v);
                 mstEdges.add(e);
-                totalWeight += e.weight;
+                totalWeight += e.w;
             }
         }
 
@@ -89,13 +70,13 @@ public class MST {
     }
 
     public static Result prim(Graph graph) {
-        int n = graph.getV();
+        int n = graph.n();
         if (n == 0) {
             return new Result(0, new ArrayList<>(), 0, 0, 0, 0);
         }
 
         boolean[] inMST = new boolean[n];
-        PriorityQueue<Edge> pq = new PriorityQueue<>(Comparator.comparingInt(e -> e.weight));
+        PriorityQueue<Edge> pq = new PriorityQueue<>(Comparator.comparingInt(e -> e.w));
 
         List<Edge> mstEdges = new ArrayList<>();
         long totalWeight = 0;
@@ -106,26 +87,27 @@ public class MST {
         for (int startVertex = 0; startVertex < n; startVertex++) {
             if (!inMST[startVertex]) {
                 components++;
-                pq.add(new Edge(-1, startVertex, 0)); // Виртуальное ребро в стартовую вершину
+                pq.add(new Edge(-1, startVertex, 0));
 
                 while (!pq.isEmpty()) {
                     Edge e = pq.poll();
                     comparisons++;
 
-                    int u = e.to;
+                    int u = e.v;
                     if (inMST[u]) {
                         continue;
                     }
                     inMST[u] = true;
 
-                    if (e.from != -1) {
+                    if (e.u != -1) {
                         mstEdges.add(e);
-                        totalWeight += e.weight;
+                        totalWeight += e.w;
                     }
 
-                    for (Edge neighborEdge : graph.getAdj(u)) {
-                        edgeScans++; // Сканируем исходящее ребро
-                        if (!inMST[neighborEdge.to]) {
+                    for (Edge neighborEdge : graph.adj(u)) {
+                        edgeScans++;
+                        int neighbor = (neighborEdge.u == u) ? neighborEdge.v : neighborEdge.u;
+                        if (!inMST[neighbor]) {
                             pq.add(neighborEdge);
                         }
                     }

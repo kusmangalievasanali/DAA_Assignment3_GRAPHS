@@ -32,7 +32,7 @@ public class DAGShortestPaths {
     }
 
     public static Result compute(Graph graph) {
-        int n = graph.getV();
+        int n = graph.n();
         SCC.KahnResult kahnRes = SCC.kahn(graph);
         List<Integer> topoOrder = kahnRes.getOrder();
 
@@ -41,12 +41,7 @@ public class DAGShortestPaths {
         int[] parent = new int[n];
         Arrays.fill(parent, -1);
 
-        int[] inDegree = new int[n];
-        for (int u = 0; u < n; u++) {
-            for (Edge e : graph.getAdj(u)) {
-                inDegree[e.to]++;
-            }
-        }
+        int[] inDegree = graph.inDegrees();
 
         for (int i = 0; i < n; i++) {
             if (inDegree[i] == 0) {
@@ -58,11 +53,11 @@ public class DAGShortestPaths {
 
         for (int u : topoOrder) {
             if (dist[u] != Long.MAX_VALUE / 2) {
-                for (Edge e : graph.getAdj(u)) {
+                for (Edge e : graph.adj(u)) {
                     edgeScans++;
-                    int v = e.to;
-                    if (dist[u] + e.weight < dist[v]) {
-                        dist[v] = dist[u] + e.weight;
+                    int v = e.v;
+                    if (dist[u] + e.w < dist[v]) {
+                        dist[v] = dist[u] + e.w;
                         parent[v] = u;
                     }
                 }
