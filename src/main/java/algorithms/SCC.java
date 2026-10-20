@@ -160,4 +160,54 @@ public class SCC {
         boolean hasCycle = order.size() < n;
         return new KahnResult(order, hasCycle, edgeScans);
     }
+    public static KosarajuResult tarjan(Graph graph) {
+        int n = graph.n();
+        int[] ids = new int[n];
+        int[] low = new int[n];
+        boolean[] onStack = new boolean[n];
+        Arrays.fill(ids, -1);
+
+        java.util.Deque<Integer> stack = new java.util.ArrayDeque<>();
+        int[] timer = {0};
+        int[] sccCount = {0};
+        long[] edgeScans = {0};
+        int[] maxDepth = {0};
+
+        for (int i = 0; i < n; i++) {
+            if (ids[i] == -1) {
+                tarjanDFS(i, 1, graph, ids, low, onStack, stack, timer, sccCount, edgeScans, maxDepth);
+            }
+        }
+
+        return new KosarajuResult(sccCount[0], edgeScans[0], maxDepth[0]);
+    }
+
+    private static void tarjanDFS(int at, int depth, Graph graph, int[] ids, int[] low, boolean[] onStack,
+                                  java.util.Deque<Integer> stack, int[] timer, int[] sccCount,
+                                  long[] edgeScans, int[] maxDepth) {
+        maxDepth[0] = Math.max(maxDepth[0], depth);
+        stack.push(at);
+        onStack[at] = true;
+        ids[at] = low[at] = timer[0]++;
+
+        for (graph.Edge e : graph.adj(at)) {
+            edgeScans[0]++;
+            int to = e.v;
+            if (ids[to] == -1) {
+                tarjanDFS(to, depth + 1, graph, ids, low, onStack, stack, timer, sccCount, edgeScans, maxDepth);
+                low[at] = Math.min(low[at], low[to]);
+            } else if (onStack[to]) {
+                low[at] = Math.min(low[at], ids[to]);
+            }
+        }
+
+        if (ids[at] == low[at]) {
+            while (true) {
+                int node = stack.pop();
+                onStack[node] = false;
+                if (node == at) break;
+            }
+            sccCount[0]++;
+        }
+    }
 }
