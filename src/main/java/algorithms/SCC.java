@@ -3,7 +3,10 @@ package algorithms;
 import graph.Edge;
 import graph.Graph;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class SCC {
 
@@ -58,7 +61,7 @@ public class SCC {
                         stateStack.push(edgeIndex + 1);
                         Edge e = neighbors.get(edgeIndex);
                         edgeScans++;
-                        int v = (e.u == u) ? e.v : e.u;
+                        int v = e.v;
                         if (!visited[v]) {
                             visited[v] = true;
                             stack.push(v);
@@ -90,7 +93,7 @@ public class SCC {
                     int u = stack.pop();
                     for (Edge e : reversed.adj(u)) {
                         edgeScans++;
-                        int v = (e.u == u) ? e.v : e.u;
+                        int v = e.v;
                         if (!visited[v]) {
                             visited[v] = true;
                             stack.push(v);
@@ -131,12 +134,6 @@ public class SCC {
         int n = graph.n();
         int[] inDegree = graph.inDegrees();
         long edgeScans = 0;
-
-        for (int u = 0; u < n; u++) {
-            for (Edge e : graph.adj(u)) {
-                edgeScans++;
-            }
-        }
 
         ArrayDeque<Integer> queue = new ArrayDeque<>();
         for (int i = 0; i < n; i++) {

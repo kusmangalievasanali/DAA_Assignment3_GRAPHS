@@ -3,7 +3,10 @@ package algorithms;
 import graph.Edge;
 import graph.Graph;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.PriorityQueue;
 
 public class MST {
 
@@ -32,89 +35,85 @@ public class MST {
         public long getDsuOps() { return dsuOps; }
     }
 
+    private static final class CountingComparator implements Comparator<Edge> {
+        long count = 0;
+
+        @Override
+        public int compare(Edge a, Edge b) {
+            count++;
+            return Integer.compare(a.w, b.w);
+        }
+    }
+
     public static Result kruskal(Graph graph) {
         int n = graph.n();
-        List<Edge> allEdges = graph.edges();
-        long edgeScans = allEdges.size();
-
-        class CountingComparator implements java.util.Comparator<Edge> {
-            long compCount = 0;
-            @Override
-            public int compare(Edge a, Edge b) {
-                compCount++;
-                return Integer.compare(a.w, b.w);
-            }
-        }
         CountingComparator comp = new CountingComparator();
-
-        List<Edge> sortedEdges = new ArrayList<>(allEdges);
+        List<Edge> sortedEdges = new ArrayList<>(graph.edges());
         sortedEdges.sort(comp);
-        long comparisons = comp.compCount;
 
         DSU dsu = new DSU(n);
         List<Edge> mstEdges = new ArrayList<>();
         long totalWeight = 0;
+        long edgeScans = 0;
 
         for (Edge e : sortedEdges) {
+            if (dsu.components() <= 1) {
+                break;
+            }
             edgeScans++;
-            int rootU = dsu.find(e.u);
-            int rootV = dsu.find(e.v);
-            if (rootU != rootV) {
+            if (dsu.find(e.u) != dsu.find(e.v)) {
                 dsu.union(e.u, e.v);
                 mstEdges.add(e);
                 totalWeight += e.w;
             }
         }
 
-        return new Result(totalWeight, mstEdges, dsu.components(), edgeScans, comparisons, dsu.ops());
+        return new Result(totalWeight, mstEdges, dsu.components(), edgeScans, comp.count, dsu.ops());
     }
 
     public static Result prim(Graph graph) {
         int n = graph.n();
-        if (n == 0) {
-            return new Result(0, new ArrayList<>(), 0, 0, 0, 0);
-        }
-
         boolean[] inMST = new boolean[n];
-        PriorityQueue<Edge> pq = new PriorityQueue<>(Comparator.comparingInt(e -> e.w));
+        CountingComparator comp = new CountingComparator();
+        PriorityQueue<Edge> pq = new PriorityQueue<>(comp);
 
         List<Edge> mstEdges = new ArrayList<>();
         long totalWeight = 0;
         long edgeScans = 0;
-        long comparisons = 0;
         int components = 0;
 
-        for (int startVertex = 0; startVertex < n; startVertex++) {
-            if (!inMST[startVertex]) {
-                components++;
-                pq.add(new Edge(-1, startVertex, 0));
+        for (int start = 0; start < n; start++) {
+            if (inMST[start]) {
+                continue;
+            }
+            components++;
+            inMST[start] = true;
+            edgeScans += pushEdges(graph, start, inMST, pq);
 
-                while (!pq.isEmpty()) {
-                    Edge e = pq.poll();
-                    comparisons++;
-
-                    int u = e.v;
-                    if (inMST[u]) {
-                        continue;
-                    }
-                    inMST[u] = true;
-
-                    if (e.u != -1) {
-                        mstEdges.add(e);
-                        totalWeight += e.w;
-                    }
-
-                    for (Edge neighborEdge : graph.adj(u)) {
-                        edgeScans++;
-                        int neighbor = (neighborEdge.u == u) ? neighborEdge.v : neighborEdge.u;
-                        if (!inMST[neighbor]) {
-                            pq.add(neighborEdge);
-                        }
-                    }
+            while (!pq.isEmpty()) {
+                Edge e = pq.poll();
+                if (inMST[e.u] && inMST[e.v]) {
+                    continue;
                 }
+                int next = inMST[e.u] ? e.v : e.u;
+                inMST[next] = true;
+                mstEdges.add(e);
+                totalWeight += e.w;
+                edgeScans += pushEdges(graph, next, inMST, pq);
             }
         }
 
-        return new Result(totalWeight, mstEdges, components, edgeScans, comparisons, 0);
+        return new Result(totalWeight, mstEdges, components, edgeScans, comp.count, 0);
+    }
+
+    private static long pushEdges(Graph graph, int v, boolean[] inMST, PriorityQueue<Edge> pq) {
+        long scanned = 0;
+        for (Edge e : graph.adj(v)) {
+            scanned++;
+            if (!inMST[e.to(v)]) {
+                pq.add(e);
+            }
+        }
+        return scanned;
     }
 }
